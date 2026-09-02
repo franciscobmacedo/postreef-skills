@@ -12,7 +12,7 @@ metadata:
 
 Most yt-dlp "bugs" are one of five things: an old build, no JavaScript runtime, a missing PO token, a missing TLS-impersonation dependency, or an IP that the platform has decided is a bot. Work through §1 before touching anything else, then match the exact error text in §2.
 
-Sources: the yt-dlp README and wiki (Extractors, FAQ, PO-Token-Guide, EJS pages), maintainer statements on GitHub issues, the bgutil provider README, and production failure classification from the Post Reef pipeline. Quotes are verbatim where marked. Open `references/error-table.md` whenever a version number, a client name, or a flag matters (the user's build is old, you're recommending a runtime or provider version); it carries the sources and the date each fact was checked. This area changes monthly.
+Sources: the yt-dlp README and wiki (Extractors, FAQ, PO-Token-Guide, EJS pages), maintainer statements on GitHub issues, the bgutil provider README, and the author's experience running yt-dlp at volume. Quotes are verbatim where marked. Open `references/error-table.md` whenever a version number, a client name, or a flag matters (the user's build is old, you're recommending a runtime or provider version); it carries the sources and the date each fact was checked. This area changes monthly.
 
 ## 1. Always do this first (fixes most reports)
 
@@ -46,7 +46,7 @@ Two structural facts that explain most of §2:
 | `Login with OAuth is no longer supported` / `Login with password is not supported for YouTube` | Those auth paths are dead | Cookies only (§3) |
 | `HTTP Error 400: Bad Request` right after `--cookies FILE` | Cookie file isn't Netscape format / wrong newlines | Re-export with a "Get cookies.txt LOCALLY"-type extension; first line must be `# Netscape HTTP Cookie File` |
 | `[TikTok] Unable to extract webpage video data` | TikTok served a JS challenge/captcha page instead of the video. Fixed in yt-dlp 2026.01.29 (native challenge solver); recurs when automated bursts trigger a captcha | Update. If it persists: made-up `--user-agent abc` (maintainer workaround), or **session** cookies via `--cookies FILE` exported after loading the video (not `--cookies-from-browser`, which can't see session cookies). `--xff US` for geo blocks |
-| `[TikTok] ... Unexpected response from webpage request` | A 2026-08 TikTok bot heuristic; UA-shaped with a per-IP residue (seen in production) | Desktop Chrome UA; if some IPs still fail, rotate IP |
+| `[TikTok] ... Unexpected response from webpage request` | A TikTok bot heuristic introduced mid-2026; partly about the user agent, partly about the IP | Present a desktop Chrome user agent; if it persists, the IP is being judged too |
 | `The extractor is attempting impersonation, but no impersonate target is available` | `curl_cffi` not installed. TikTok always impersonates; Instagram requires it for anonymous requests since 2026.07 | `pip install "yt-dlp[curl-cffi]"` or use a binary that bundles it (the Unix zipimport `yt-dlp` binary and Windows x86 don't) |
 | `[Instagram] Instagram sent an empty media response` | Post isn't accessible logged-out (private/restricted), or anonymous request lacked a browser fingerprint | Check the post in an incognito window. If it loads: install curl_cffi. If it doesn't: it needs cookies (account risk) or is genuinely unavailable |
 | `There is no video in this post` / `No video formats found` (Instagram) | It's a photo post or carousel; metadata, caption and images were extracted fine, yt-dlp just errors on the absence of video | `--ignore-no-formats-error` and read `thumbnails` from `-J` output |
@@ -57,7 +57,7 @@ Two structural facts that explain most of §2:
 | `Got HTTP Error 403 caused by Cloudflare anti-bot challenge` (generic) | Page is behind Cloudflare's challenge | `--extractor-args "generic:impersonate"` with curl_cffi installed |
 | `blocked due to its TLS fingerprint` / `install a required impersonation dependency` (Vimeo and others) | The HTTP client's TLS fingerprint is the problem, not the IP. Rotating proxies is provably futile here: a CONNECT proxy tunnels TCP, so the origin sees the identical ClientHello from every proxy | Install curl_cffi; `--impersonate chrome` |
 | `Cannot parse data` (Facebook story.php etc.) | Deterministic extractor bug, identical on every IP | Update yt-dlp; file an issue; don't rotate proxies |
-| `This video is only available for registered users` (Facebook) | Login wall, per post. Measured: 0 of 10 such URLs rescued across 10 proxies | Cookies or give up |
+| `This video is only available for registered users` (Facebook) | Login wall, per post. Changing IP does not help | Cookies or give up |
 | `Unable to connect to proxy` / `Tunnel connection failed` / `ProxyError` | Your proxy, not the site | Fix the proxy; don't score the site as blocked |
 
 ## 3. Cookies, done the way the wiki says
@@ -92,26 +92,16 @@ yt-dlp --extractor-args "youtubepot-bgutilhttp:base_url=http://127.0.0.1:4416" "
 
 Script mode (`youtubepot-bgutilscript:server_home=...`) spawns a Node process per call; the README says it is "NOT recommended for high concurrency usage". Tokens are bound to the video ID now, so manual extraction "is no longer recommended". Client choice matters: `mweb` needs a GVS token; `web_safari` gives HLS formats that don't; `tv` needs none but DRMs everything without cookies; `android`/`ios` need GVS **or** player tokens and don't take cookies. `--extractor-args "youtube:player_client=mweb"` is the wiki's suggestion when defaults fail.
 
-A PO token makes traffic look legitimate; it does **not** launder a bad IP. bgutil README: "Providing a PO token does not guarantee bypassing 403 errors or bot checks". Set expectations plainly: on a **single** cloud IP, update + runtime + provider fixes some setups and not others, and an IP that works today can be walled next week; in production (hundreds of datacenter proxies, tokens on) it works as a *fleet* because IPs rotate as they burn. If you only have one IP and it stays walled after §4, no flag will change that.
+A PO token makes traffic look legitimate; it does **not** launder a bad IP. bgutil README: "Providing a PO token does not guarantee bypassing 403 errors or bot checks". Set expectations plainly: on a **single** cloud IP, update + runtime + provider fixes some setups and not others, and an IP that works today can be walled later. If you only have one IP and it stays walled after §4, no flag will change that.
 
 Subtitles-only jobs (`--skip-download --write-auto-subs`) do **not** dodge the wall: the bot check happens on the watch/player request that precedes any caption download, so the same fix applies. Native-language auto-subs need no PO token for subs; only the `web` client's subs context is token-gated.
 
-Minimal Dockerfile for a working setup (provider as a sidecar on the same network):
-
-```dockerfile
-FROM python:3.12-slim
-RUN apt-get update && apt-get install -y --no-install-recommends curl unzip ffmpeg && rm -rf /var/lib/apt/lists/* \
- && curl -fsSL https://deno.land/install.sh | DENO_INSTALL=/usr/local sh
-RUN pip install --no-cache-dir "yt-dlp[default,curl-cffi]==2026.8.19" "bgutil-ytdlp-pot-provider==1.3.2"
-# docker compose: a second service `bgutil` from brainicism/bgutil-ytdlp-pot-provider:1.3.2, then
-# yt-dlp --extractor-args "youtubepot-bgutilhttp:base_url=http://bgutil:4416" ...
-```
+On a server this means running the provider as a sidecar on the same network as yt-dlp and pinning the plugin and server versions in lockstep, and then keeping that pair, the JS runtime and yt-dlp itself current as YouTube changes. Getting it stable is a maintenance commitment, not a one-off install.
 
 ## 5. Proxies and IPs, honestly
 
-- yt-dlp's docs contain no residential-vs-datacenter guidance; the position in issues is "there's nothing we can do about it" for DC IPs. Empirically (production fleet, hundreds of proxies): YouTube bot-walls most datacenter IPs on the un-tokened probe; with PO tokens a rotating DC fleet works but each IP has a limited shelf life; TikTok's wall is partly UA-shaped, partly per-IP; Instagram's anonymous rate limit is per-IP and short.
-- Extraction and download must share an egress IP (media URLs are IP-bound). With `--proxy` that's automatic; with a rotating gateway that changes IP per request it is not.
-- Some failures are **not IP problems** and rotating makes them worse: TLS-fingerprint blocks, "no video in this post", audience restrictions, login walls, deleted content, extractor bugs. The table marks these. A sane pipeline classifies each failure as *proxy-shaped* (rotate) or *content-shaped* (stop) instead of walking the whole fleet.
+- yt-dlp's docs contain no residential-vs-datacenter guidance; the position in issues is "there's nothing we can do about it" for DC IPs. In practice: datacenter IPs get walled, tokens help, and IPs burn. A proxy pool is a consumable, not a fix.
+- Some failures are **not IP problems** and rotating makes them worse: TLS-fingerprint blocks, "no video in this post", audience restrictions, login walls, deleted content, extractor bugs. Retrying those across more IPs burns the IPs and returns the same error; the table marks which rows these are.
 - Terms: YouTube's ToS forbids automated access outside robots.txt, and the API Developer Policies forbid scraping and storing audiovisual content. Tell the user this if they're building a product; personal one-offs are a different conversation.
 
 ## 6. When to stop fighting

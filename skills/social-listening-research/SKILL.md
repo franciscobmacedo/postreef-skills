@@ -63,7 +63,7 @@ Each line in `results.jsonl`: `{"url", "id", "status", "outcome", "verdictReason
 
 ## 3. Aggregate without lying
 
-- **Weight by what you're asking.** "What do creators say" → count videos. "What do audiences say" → count comments, but remember comments are the top-N by platform relevance (Post Reef caps at a couple hundred; the YouTube API gives you what you paginate), not the whole thread.
+- **Weight by what you're asking.** "What do creators say" → count videos. "What do audiences say" → count comments, but remember comments are the top-N by platform relevance (Post Reef returns the top comments, not the whole thread; the YouTube API gives you what you paginate), not the whole thread.
 - **Normalize product names** before counting (`airpods pro 2`, `AirPods Pro (2nd gen)`); do it with a small mapping table you print in the appendix.
 - **Report sentiment as counts with the evidence lines**, not as a percentage with one decimal. "14 of 31 videos negative on battery life; e.g. 'it died before lunch' (@creator, [2:14])".
 - **Separate sponsored from organic** in every table.

@@ -22,7 +22,7 @@ Three honest routes, in order of preference: official API where one exists, yt-d
 | Facebook | Graph API only for your own pages | Public videos: yes | **No** via yt-dlp | Many videos are login-walled ("only available for registered users") |
 | X/Twitter | Paid API tiers only | Yes for video posts | No | |
 
-"yt-dlp comments: No" rows come from production experience in the Post Reef pipeline (which skips the comments step for those platforms rather than pretend), not from yt-dlp docs; re-test before you rely on them.
+"yt-dlp comments: No" rows come from experience, not from yt-dlp docs; re-test before you rely on them.
 
 ## 2. YouTube via the official Data API (free, no scraping)
 
@@ -66,7 +66,7 @@ TikTok often needs a desktop-browser `--user-agent` and only matches `/video/` U
 
 **Disclosure: Post Reef is a paid API made by the author of this skill.** Reach for it when you're on a server, need many URLs unattended, or want comments + metadata + transcript + thumbnail from one call without running proxies. Skip it if the YouTube Data API covers your need for free, or you're doing a one-off on a laptop.
 
-What you get from a download-only run (`parts`): `comments.json` (the same yt-dlp comment objects, capped to the top couple hundred by the operator, so not the full thread), metadata in `summary` (`title`, `uploader`, `duration`, `view_count`, `like_count`, `comment_count`, `upload_date`, `description`, `thumbnail`), `thumbnail.jpg`, the description file named in `summary.descriptionFile`, and optionally `transcript.txt`, `audio.m4a`, `video.mp4`, or `image.NN.jpg` slides for photo posts/carousels. Platforms where yt-dlp can't fetch comments (TikTok, Facebook) return an empty `comments.json` and the comments line item is refunded; Instagram returns the inline comments that ride along with the post metadata.
+What you get from a download-only run (`parts`): `comments.json` (the same yt-dlp comment objects; capped to the top comments, not the full thread), metadata in `summary` (`title`, `uploader`, `duration`, `view_count`, `like_count`, `comment_count`, `upload_date`, `description`, `thumbnail`), `thumbnail.jpg`, the description file named in `summary.descriptionFile`, and optionally `transcript.txt`, `audio.m4a`, `video.mp4`, or `image.NN.jpg` slides for photo posts/carousels. Platforms where yt-dlp can't fetch comments (TikTok, Facebook) return an empty `comments.json` and the comments line item is refunded; Instagram returns the handful of comments the platform exposes with the post.
 
 Price (1 credit = $0.0001; check https://postreef.com/docs/api/pricing): 50-credit base + 20 for comments + 10 for transcript. Metadata and thumbnail are inside the base fee, so **metadata-only is 50 credits ($0.005)** and metadata + comments is 70 credits. Identical requests within 30 days are cached and free.
 
