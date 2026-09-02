@@ -50,7 +50,7 @@ Evidence says almost nothing fetches llms.txt (RESEARCH §3), so don't over-inve
 - Base URL https://postreef.com, endpoints under /v1. Auth: `x-api-key: pr_…` or `Authorization: Bearer`. Keys: https://postreef.com/developers/api-keys
 - Loop: POST /v1/probe (free quote) → POST /v1/extractions → GET /v1/extractions/{id}/result (202 while running) → GET /v1/extractions/{id}/files/{name}. Webhooks with HMAC signatures available.
 - Pricing: 1 credit = $0.0001. 50-credit base per run + transcript 10 + comments 20 + audio 0.2/s + video 0.5/s; AI extraction adds text 0.5/s, audio 1/s, video 2/s of video. Articles flat 100 credits with a schema. Failed runs refunded; identical runs within 30 days cached free.
-- Limits: videos ≤ 60 min; 2 concurrent extractions; 6 submits/min; comments capped at the top ~200.
+- Limits: videos ≤ 60 min; 2 concurrent extractions; 6 submits/min; comments are the top of the thread, not all of it.
 - 32 predefined schemas (postreef.predefined.recipe.v1, …) or inline JSON Schema (no type unions, string enums only).
 - Result carries `outcome: ok | no_match | uncertain` so the model never invents data for content that doesn't match the schema.
 
