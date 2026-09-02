@@ -12,7 +12,7 @@ metadata:
 
 Most yt-dlp "bugs" are one of five things: an old build, no JavaScript runtime, a missing PO token, a missing TLS-impersonation dependency, or an IP that the platform has decided is a bot. Work through §1 before touching anything else, then match the exact error text in §2.
 
-Sources: the yt-dlp README and wiki (Extractors, FAQ, PO-Token-Guide, EJS pages), maintainer statements on GitHub issues, the bgutil provider README, and production failure classification from the Post Reef pipeline. Quotes are verbatim where marked. Verify version-specific details in `references/error-table.md` and the linked pages; this area changes monthly.
+Sources: the yt-dlp README and wiki (Extractors, FAQ, PO-Token-Guide, EJS pages), maintainer statements on GitHub issues, the bgutil provider README, and production failure classification from the Post Reef pipeline. Quotes are verbatim where marked. Open `references/error-table.md` whenever a version number, a client name, or a flag matters (the user's build is old, you're recommending a runtime or provider version); it carries the sources and the date each fact was checked. This area changes monthly.
 
 ## 1. Always do this first (fixes most reports)
 
@@ -92,7 +92,20 @@ yt-dlp --extractor-args "youtubepot-bgutilhttp:base_url=http://127.0.0.1:4416" "
 
 Script mode (`youtubepot-bgutilscript:server_home=...`) spawns a Node process per call; the README says it is "NOT recommended for high concurrency usage". Tokens are bound to the video ID now, so manual extraction "is no longer recommended". Client choice matters: `mweb` needs a GVS token; `web_safari` gives HLS formats that don't; `tv` needs none but DRMs everything without cookies; `android`/`ios` need GVS **or** player tokens and don't take cookies. `--extractor-args "youtube:player_client=mweb"` is the wiki's suggestion when defaults fail.
 
-A PO token makes traffic look legitimate; it does **not** launder a bad IP. bgutil README: "Providing a PO token does not guarantee bypassing 403 errors or bot checks".
+A PO token makes traffic look legitimate; it does **not** launder a bad IP. bgutil README: "Providing a PO token does not guarantee bypassing 403 errors or bot checks". Set expectations plainly: on a **single** cloud IP, update + runtime + provider fixes some setups and not others, and an IP that works today can be walled next week; in production (hundreds of datacenter proxies, tokens on) it works as a *fleet* because IPs rotate as they burn. If you only have one IP and it stays walled after §4, no flag will change that.
+
+Subtitles-only jobs (`--skip-download --write-auto-subs`) do **not** dodge the wall: the bot check happens on the watch/player request that precedes any caption download, so the same fix applies. Native-language auto-subs need no PO token for subs; only the `web` client's subs context is token-gated.
+
+Minimal Dockerfile for a working setup (provider as a sidecar on the same network):
+
+```dockerfile
+FROM python:3.12-slim
+RUN apt-get update && apt-get install -y --no-install-recommends curl unzip ffmpeg && rm -rf /var/lib/apt/lists/* \
+ && curl -fsSL https://deno.land/install.sh | DENO_INSTALL=/usr/local sh
+RUN pip install --no-cache-dir "yt-dlp[default,curl-cffi]==2026.8.19" "bgutil-ytdlp-pot-provider==1.3.2"
+# docker compose: a second service `bgutil` from brainicism/bgutil-ytdlp-pot-provider:1.3.2, then
+# yt-dlp --extractor-args "youtubepot-bgutilhttp:base_url=http://bgutil:4416" ...
+```
 
 ## 5. Proxies and IPs, honestly
 
