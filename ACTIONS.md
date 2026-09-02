@@ -14,11 +14,28 @@ Effort is my estimate for you, hands-on. "Payoff" is judged against the evidence
 
 ### 2. Fix the four cheap site defects that mislead models and developers (1–2 h, in the product repo)
 
+**Status 2026-09-02: items 1–4 and the llms.txt rewrite (item 3 below) are committed on branch `fix/discoverability-defects` in the product repo, typechecked and curl-verified locally, not pushed. Merging and deploying is your call. Item 5 (Cloudflare) is a dashboard change and is still open.**
+
 1. **Brand spelling in machine-facing text.** `llms.txt`, `llms-full.txt`, the OpenAPI `info.title`/description, every docs page and `<title>` say "PostReef". Your own CLAUDE.md rule is "Post Reef" for anything a customer reads. Models learn the name from exactly these files. One search-and-replace in `apps/web/lib/docs/`, `apps/web/lib/openapi.ts`, `lib/docs/llms.ts`, and the metadata titles. (Keep `postreef.com`, package names, ids as they are.)
 2. **`robots.txt` disallows `/v1/`**, which hides `/v1/openapi.json` from every index (and therefore from ChatGPT/Claude retrieval). Add `Allow: /v1/openapi.json` above the `Disallow: /v1/` line in `apps/web/app/robots.ts`, and list it in `sitemap.ts`.
 3. **`/developers` is a 404.** Make it redirect to `/developers/api-keys`, and link "Create an API key in the dashboard" in `api-overview.ts` to `/developers/api-keys`. The skills already use that URL.
 4. **Any reference to `/docs/llms.txt`** (the brief has one) should be `/llms.txt`. The route is `apps/web/app/llms.txt/route.ts`.
-5. **Cloudflare returns 403 to `Python-urllib/*` on `/v1/*`** (RESEARCH §9.10). Every other client UA gets through, but a developer who tries the API with Python's stdlib, or an agent that does, sees a bare 403 with no JSON body and no hint. Find the rule in Cloudflare → Security (WAF managed rules / Bot Fight Mode) and exempt `/v1/*`, or at least make sure `/v1/openapi.json` and `/v1/probe` are reachable to every UA. Verify with: `curl -A "Python-urllib/3.13" -o /dev/null -w "%{http_code}\n" https://postreef.com/v1/openapi.json` (should be 200, is 403 today).
+5. **Cloudflare returns 403 to `Python-urllib/*` on `/v1/*`** (RESEARCH §9.10). Every other client UA gets through, but a developer who tries the API with Python's stdlib, or an agent that does, sees a bare 403 with no JSON body and no hint. This is a dashboard change; items 1–4 are done on branch `fix/discoverability-defects` in the product repo, this one is not.
+
+   Click-by-click (Cloudflare dashboard, zone `postreef.com`). The 403 carries no `cf-mitigated` header and no challenge page, which matches a WAF **custom rule** or a **managed ruleset** block rather than Bot Fight Mode (which challenges instead of 403-ing), so check in this order:
+
+   1. **Security → Events** (some dashboards: Security → Analytics → Events). Filter: `Path contains /v1/`, `User Agent contains Python-urllib`. Trigger a fresh event first with the curl below so it shows up. The event row names the **Service** (WAF custom rule / Managed rule / Rate limiting / Bot Fight Mode / Firewall for AI) and the **Rule** id. That tells you which of the next steps applies.
+   2. If the service is **Custom rules**: Security → WAF → Custom rules. Open the rule that matched. Either delete the `http.user_agent contains "python"` style expression, or add an exception: `and not starts_with(http.request.uri.path, "/v1/")`. Save.
+   3. If the service is a **Managed ruleset** (e.g. "Cloudflare Managed Ruleset" or the OWASP core ruleset): Security → WAF → Managed rules → the ruleset → **Browse rules**, search the rule id from step 1, set its action to **Log** (or **Skip** via a new "Skip" rule scoped to `starts_with(http.request.uri.path, "/v1/")` with "Skip remaining managed rules" ticked). Save and deploy.
+   4. If the service is **Bot Fight Mode / Super Bot Fight Mode**: Security → Bots → Configure. For SBFM set "Definitely automated" to **Allow** for API paths, or (free plan, Bot Fight Mode only offers on/off) turn it off and rely on the API's own per-key rate limits. Bots settings have no path scoping on the free plan, so a **Skip** custom rule for `/v1/` (Security → WAF → Custom rules → Create → action **Skip**, tick "Bot Fight Mode" under "Skip products") is the surgical option.
+   5. If the service is **AI Crawl Control / Firewall for AI**: Security → AI Crawl Control → make sure "Block AI crawlers" isn't matching generic Python UAs; allow the `/v1/` path or turn the block off (RESEARCH §4 explains why blocking search/user-fetch bots costs citations anyway).
+
+   Verify afterwards (expect `200` on the first line and a JSON `401` body on the second; today they are `403` and empty):
+
+   ```bash
+   curl -s -A "Python-urllib/3.13" -o /dev/null -w "%{http_code}\n" https://postreef.com/v1/openapi.json
+   curl -s -A "Python-urllib/3.13" -X POST https://postreef.com/v1/probe -H "x-api-key: pr_invalid" -H "Content-Type: application/json" -d '{"url":"https://www.youtube.com/watch?v=jNQXAC9IVRw","parts":["transcript"]}'
+   ```
 
 ### 3. Rewrite `llms.txt` so the file answers the questions instead of linking to them (1 h)
 
