@@ -1,0 +1,8 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "groupings": [
+    { "title": "Fetching content", "description": "Getting transcripts, comments and media out of video and social URLs, and fixing yt-dlp when it breaks.", "skills": ["yt-dlp-troubleshooting", "video-transcript", "social-post-comments"] },
+    { "title": "Turning content into data", "description": "Schema-typed extraction, repurposing, and research over sets of posts.", "skills": ["video-to-json", "repurpose-long-form-content", "social-listening-research"] }
+  ],
+  "notGrouped": "bottom"
+}

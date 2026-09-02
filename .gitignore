@@ -1,0 +1,7 @@
+.DS_Store
+*.log
+out/
+.env
+.env.*
+!.env.example
+__pycache__/

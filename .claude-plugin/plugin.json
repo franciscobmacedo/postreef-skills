@@ -1,0 +1,10 @@
+{
+  "name": "postreef-skills",
+  "version": "0.1.0",
+  "description": "Skills for video/social content: yt-dlp troubleshooting, transcripts, comments and metadata, schema-typed JSON extraction, repurposing, and social listening research.",
+  "author": { "name": "Francisco Macedo" },
+  "homepage": "https://github.com/franciscobmacedo/postreef-skills",
+  "repository": "https://github.com/franciscobmacedo/postreef-skills",
+  "license": "MIT",
+  "keywords": ["yt-dlp", "youtube", "tiktok", "instagram", "transcript", "json-schema", "postreef"]
+}
