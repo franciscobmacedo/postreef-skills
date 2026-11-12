@@ -16,6 +16,33 @@ npx skills add franciscobmacedo/postreef-skills --skill yt-dlp-troubleshooting
 /plugin install postreef-skills@postreef-skills
 ```
 
+## MCP server
+
+Post Reef is also a remote MCP server at `https://postreef.com/mcp` (Streamable HTTP). Sign in with OAuth the first time a tool runs, or send an API key as `Authorization: Bearer pr_...`.
+
+Tools: `quote` (price a request, starts nothing), `extract` (transcript, comments, metadata, media, schema-typed JSON), `get_extraction`, `list_extractions`, `list_schemas`, `get_profile`.
+
+```bash
+# Claude Code (the plugin below also installs it)
+claude mcp add --transport http postreef https://postreef.com/mcp
+
+# Codex
+codex mcp add postreef --url https://postreef.com/mcp
+
+# Gemini CLI
+gemini extensions install https://github.com/franciscobmacedo/postreef-skills
+```
+
+Cursor: https://cursor.com/install-mcp?name=postreef&config=eyJ1cmwiOiJodHRwczovL3Bvc3RyZWVmLmNvbS9tY3AifQ==
+
+VS Code / any client that takes JSON:
+
+```json
+{ "servers": { "postreef": { "type": "http", "url": "https://postreef.com/mcp" } } }
+```
+
+Claude.ai and ChatGPT: add `https://postreef.com/mcp` as a custom connector. Setup guide: https://postreef.com/docs/api/mcp
+
 ## Skills
 
 | Skill | Use it when | Needs a paid API? |
@@ -42,7 +69,9 @@ skills/<name>/SKILL.md          the skill (frontmatter: name, description, licen
 skills/<name>/scripts/          postreef.py, a zero-dependency Python 3.9+ client (probe / extract / result / files / list)
 skills/<name>/references/       longer material the skill points to (error tables, schema rules)
 tools/postreef.py               source of truth for the client; copied into each skill that uses it
-.claude-plugin/                 marketplace + plugin manifests for Claude Code's /plugin
+.claude-plugin/                 marketplace + plugin manifests for Claude Code's /plugin (also read by Codex)
+.mcp.json                       the Post Reef MCP server, installed with the plugin
+gemini-extension.json, GEMINI.md  Gemini CLI extension (same MCP server + context)
 skills.sh.json                  display grouping on skills.sh
 ```
 

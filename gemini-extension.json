@@ -1,0 +1,11 @@
+{
+  "name": "postreef",
+  "version": "0.2.0",
+  "description": "Post Reef: transcripts, comments, metadata, media and schema-typed JSON from YouTube, TikTok, Instagram, Facebook, X and article URLs.",
+  "contextFileName": "GEMINI.md",
+  "mcpServers": {
+    "postreef": {
+      "httpUrl": "https://postreef.com/mcp"
+    }
+  }
+}

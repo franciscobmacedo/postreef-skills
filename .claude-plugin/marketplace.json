@@ -1,6 +1,9 @@
 {
   "name": "postreef-skills",
-  "owner": { "name": "Francisco Macedo", "url": "https://github.com/franciscobmacedo" },
+  "owner": {
+    "name": "Francisco Macedo",
+    "url": "https://github.com/franciscobmacedo"
+  },
   "metadata": {
     "description": "Skills for getting transcripts, comments, metadata and schema-typed JSON out of video and social URLs, plus yt-dlp troubleshooting."
   },
@@ -8,13 +11,26 @@
     {
       "name": "postreef-skills",
       "source": "./",
-      "description": "yt-dlp troubleshooting, video transcripts, social post comments/metadata, video-to-JSON extraction, long-form repurposing, social listening research.",
-      "version": "0.1.0",
-      "author": { "name": "Francisco Macedo" },
+      "description": "Post Reef MCP server (transcripts, comments, metadata, media and schema-typed JSON from social and video URLs) plus skills: yt-dlp troubleshooting, video transcripts, social post comments, video-to-JSON, repurposing, social listening research.",
+      "version": "0.2.0",
+      "author": {
+        "name": "Francisco Macedo"
+      },
       "homepage": "https://github.com/franciscobmacedo/postreef-skills",
       "repository": "https://github.com/franciscobmacedo/postreef-skills",
       "license": "MIT",
-      "keywords": ["yt-dlp", "youtube", "tiktok", "instagram", "transcript", "comments", "json-schema", "extraction", "postreef"],
+      "keywords": [
+        "yt-dlp",
+        "youtube",
+        "tiktok",
+        "instagram",
+        "transcript",
+        "comments",
+        "json-schema",
+        "extraction",
+        "postreef",
+        "mcp"
+      ],
       "category": "productivity"
     }
   ]

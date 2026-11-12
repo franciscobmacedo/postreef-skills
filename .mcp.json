@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "postreef": {
+      "type": "http",
+      "url": "https://postreef.com/mcp"
+    }
+  }
+}
